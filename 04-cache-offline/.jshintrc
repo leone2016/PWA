@@ -69,6 +69,8 @@
     "wsh"           : false,
     "yui"           : false,
     "globals"       : {
-        "self" : true
+        "self" : true,
+        "caches" : true
+
     }
 }
