@@ -35,11 +35,26 @@ self.addEventListener( 'activate', event=>{
 self.addEventListener( 'fetch', event=>{
     //aplicar las estrategias del cache
     // se puede validar si el usuario necesita o no
-    console.log('SW:', event.request.url);
-    if ( event.request.url.includes('https://reqres.in')){
-        const res = new Response(`{ok: false, mensaje: 'Hola mundo'}`); // esto es sumamente util cuando se trabaja sin conexion
-        event.respondWith( res );
-    }
+
+    // C L A S E: 4 9
+    // console.log('SW:', event.request.url);
+    // if ( event.request.url.includes('https://reqres.in')){
+    //     const res = new Response(`{ok: false, mensaje: 'Hola mundo'}`); // esto es sumamente util cuando se trabaja sin conexion
+    //     event.respondWith( res );
+    // }
+
+})
+
+/* C L A S E: 5 0
+SYNC: Recuperamos la conexion a internet
+ */
+
+self.addEventListener('sync', event=>{
+    console.group(' -- S Y N C -- ');
+    console.log('Tenemos conexion');
+    console.log(event);
+    console.log(event.tag);
+    console.groupEnd();
 })
 
 
