@@ -22,4 +22,16 @@ self.addEventListener('fetch', event =>{
     //     event.respondWith(respuesta);
     // }
 
+    event.respondWith( fetch( event.request ).then( res=> {
+
+        if( res.ok ){
+            return res;
+        }else{
+            return fetch('img/main.jpg');
+        }
+            console.log(res);
+
+        } )
+        )
+
 });
