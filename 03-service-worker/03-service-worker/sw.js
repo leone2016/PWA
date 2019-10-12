@@ -57,5 +57,10 @@ self.addEventListener('sync', event=>{
     console.groupEnd();
 })
 
-
+/* C L A S E: 5 1
+ Push: maneja las push notification
+  */
+self.addEventListener('push', event => {
+    console.log('Notificacion Recibida');
+})
 
