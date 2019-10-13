@@ -1,21 +1,44 @@
 
 // la URL a donde estoy accediendo
 // http://localhost/PWA/04-cache-offline/index.html
-const CACHE_NAME = 'cache-1'
+const CACHE_STATIC_NAME = 'static-v3';
+const CACHE_DYNAMIC_NAME = 'dynamic-v1';
+const CACHE_INMUTABLE_NAME = 'inmutable-v1';
+
+/*
+controlar el numero de archivos en cache
+ */
+function limpiarCache( cacheName, numeroItems){
+    caches.open( cacheName )
+        .then( cache=>{
+          return  cache.keys()
+               .then( keys=>{
+                   if(keys.length > numeroItems){
+                       cache.delete(keys[0]).then( limpiarCache( cacheName, numeroItems ));
+                   }
+                   console.log(keys);
+               });
+        });
+}
+
 self.addEventListener('install', e=>{
-    const cacheProm = caches.open( CACHE_NAME)
+    const cacheProm = caches.open( CACHE_STATIC_NAME )
         .then(cache=>{
+            //app shelll
                 return cache.addAll([
                     '/PWA/04-cache-offline/',
                     'index.html',
                     'css/style.css',
                     'img/main.jpg',
-                    'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
                     'js/app.js'
                 ]);
     });
 
-    e.waitUntil(cacheProm);
+    const cacheInmutable = caches.open( CACHE_INMUTABLE_NAME)
+        .then( cache =>{
+            return cache.add( 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css'); //esto retorna una promesa
+        });
+    e.waitUntil(Promise.all([cacheProm, cacheInmutable]));
 
 
 });
@@ -52,12 +75,15 @@ self.addEventListener('fetch', e=>{
 
             return fetch( e.request ).then( newRes =>{
                     // vuelve a cargar un archivo al cache y lo actualiza (put)
-                    caches.open(CACHE_NAME)
+                    caches.open(CACHE_DYNAMIC_NAME)
                         .then( cache=>{
                             cache.put( e.request, newRes );
+                            limpiarCache(CACHE_DYNAMIC_NAME, 50 );
                         });
                     return newRes.clone();
                 });
         });
     e.respondWith( respuesta );
 })
+
+
