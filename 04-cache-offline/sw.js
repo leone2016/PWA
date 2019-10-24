@@ -4,6 +4,8 @@
 const CACHE_STATIC_NAME = 'static-v3';
 const CACHE_DYNAMIC_NAME = 'dynamic-v1';
 const CACHE_INMUTABLE_NAME = 'inmutable-v1';
+const CACHE_DYNAMIC_LIMIT = 50;
+const CACHE_PATH_NAME = '/PWA/04-cache-offline/';
 
 /*
 controlar el numero de archivos en cache
@@ -30,7 +32,8 @@ self.addEventListener('install', e=>{
                     'index.html',
                     'css/style.css',
                     'img/main.jpg',
-                    'js/app.js'
+                    'js/app.js',
+                    'img/no-img.jpg'
                 ]);
     });
 
@@ -64,7 +67,7 @@ self.addEventListener('fetch', e=>{
 
     //2. cache fallback then cache: intenta primero el cache y despues ve a la internet
 
-    const respuesta = caches.match( e.request )
+    /*const respuesta = caches.match( e.request )
         .then( res=>{
 
             if( res ) return res;
@@ -78,12 +81,83 @@ self.addEventListener('fetch', e=>{
                     caches.open(CACHE_DYNAMIC_NAME)
                         .then( cache=>{
                             cache.put( e.request, newRes );
-                            limpiarCache(CACHE_DYNAMIC_NAME, 50 );
+                            limpiarCache(CACHE_DYNAMIC_NAME, CACHE_DYNAMIC_LIMIT );
                         });
                     return newRes.clone();
                 });
         });
-    e.respondWith( respuesta );
-})
+    e.respondWith( respuesta );*/
 
+    //3. Estrategia: Network with cache fallback: que primero va internet y obtenga el registro y si lo obtiene MUESTRALO
+    // caso contrario ve a cache
+
+    //primero ve a internet
+    //esta peticion puede F A L L A R
+  /*  const respuesta = fetch( e.request ).then( res => {
+        if ( !res ) return caches.match( e.request );  //como esta estrategia siempre va a internet, hacemos que priemro vaya a cache
+        caches.open( CACHE_DYNAMIC_NAME )
+            .then( cache =>{
+                cache.put( e.request, res );
+                limpiarCache( CACHE_DYNAMIC_NAME, CACHE_DYNAMIC_LIMIT);
+            });
+        return res.clone(); //aprovecho que ya lo obtuve, guardo en cache (arriba)  ↑
+    }).catch( err =>{
+        //si N O existe conexion a internet, solo queda revisar en cache
+        return caches.match( e.request ); // si existe un match con la peticion que se esta pidiendo RETORNA
+    });
+    e.respondWith(respuesta);*/
+
+
+  // 4. Cache with network update
+    //cuando el rendimiento es critico, cuando necesitamos que la aplicacion aparezca lo mas rapido posible, como nativa
+    // las actualizaciones siempre estaran una version atras de la del navegador web
+
+    //suponemos que el rendimiento es critico, la app trabaja solo con lo que tenga en cache
+
+    /*if( e.request.url.includes('bootstrap')){
+       return e.respondWith( caches.match( e.request ));
+    }
+    const respuesta = caches.open( CACHE_STATIC_NAME).then( cache=>{ // busca y abre la cache con el nombre CACHE_STATIC_NAME = static-v3
+        //va al internet y obtenga el nuevo recurso o respuesta
+        fetch( e.request ).then( newRes =>{ // a su vez cuando retorna, hacemos un fetch de lo que se encuentra en el hosting, eso se almacena en la cache = CACHE_STATIC_NAME
+            //actuliza el cache
+            cache.put( e.request, newRes );
+        }); //un fetch se hace despues del return
+        return cache.match( e.request ); // cuando lo abras, retorna con la peticion que pide la persona
+    });
+
+    e.respondWith(respuesta);*/
+
+    // 5. CACHE & NETWORKS R A C E: es una competencia para ver cual responde mas rapida
+
+    const respuesta =  new Promise( ((resolve, reject) => {
+        //bandera para saber cual de las dos fue rechazada
+
+        let rechazada = false;
+
+        const falloUnaVez = ()=>{
+            if(rechazada){
+                //cuando entra aqui es porque ni en internet ni en cache pudieron responder
+                if( /\.(png|jpg)$/i.test( e.request.url )){ // cuando venga una image y no importa key sensitive
+                    //si entra quiere decir que es uan imagen que tengo que retornar
+                    resolve( caches.match( CACHE_PATH_NAME+'img/no-img.jpg') );
+                }else{
+                    //aqui se puede mostrar como pagina web no se encontró
+                    reject('No se encontro respuesta');
+                }
+            }else{
+                rechazada = true;
+            }
+        }
+        fetch( e.request ).then( res => {
+             res.ok ? resolve(res): falloUnaVez(); //si el registro no se encontro llama a la funcion
+        }).catch( falloUnaVez); //cuando no tenemos internet, ojo sin parentesis
+
+        caches.match( e.request).then( res=>{
+            res ? resolve( res ): falloUnaVez();
+        }).catch( falloUnaVez );
+    }));
+    e.respondWith(respuesta);
+
+})
 
