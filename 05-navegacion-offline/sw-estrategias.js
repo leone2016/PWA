@@ -37,12 +37,12 @@ self.addEventListener('install', e => {
         .then( cache => {
 
             return cache.addAll([
-                '/',
-                '/index.html',
-                '/css/style.css',
-                '/img/main.jpg',
-                '/js/app.js',
-                '/img/no-img.jpg'
+                '/PWA/04-cache-offline/',
+                'index.html',
+                'css/style.css',
+                'img/main.jpg',
+                'js/app.js',
+                'img/no-img.jpg'
             ]);
 
         
